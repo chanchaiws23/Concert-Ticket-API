@@ -25,7 +25,7 @@ exports.register = async (req, res) => {
     }
 
     await client.query('COMMIT');
-    res.status(201).json({ message: 'User registered successfully' });
+    res.status(201).json({ message: 'Registration successful' });
   } catch (error) {
     await client.query('ROLLBACK');
     res.status(500).json({ error: error.message });
@@ -57,7 +57,13 @@ exports.login = async (req, res) => {
       { expiresIn: '1d' }
     );
 
-    res.json({ token, role: user.role, name: user.first_name });
+    res.json({ 
+      token, 
+      id: user.id, 
+      email: user.email, 
+      name: user.first_name, 
+      role: user.role 
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

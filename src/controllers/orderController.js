@@ -76,3 +76,27 @@ exports.getMyOrders = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.getOrderById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      `SELECT o.id, o.total_amount, o.status, o.created_at,
+        json_agg(json_build_object('name', t.name, 'qty', oi.quantity)) as items
+       FROM concert_ticket.orders o
+       JOIN concert_ticket.order_items oi ON o.id = oi.order_id
+       JOIN concert_ticket.ticket_types t ON oi.ticket_type_id = t.id
+       WHERE o.id = $1 AND o.user_id = $2
+       GROUP BY o.id`,
+      [id, req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
