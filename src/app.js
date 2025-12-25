@@ -12,6 +12,9 @@ const orderRoutes = require('./routes/orderRoutes');
 const organizerRoutes = require('./routes/organizerRoutes');
 const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const usersRoutes = require('./routes/usersRoutes');
+const organizersRoutes = require('./routes/organizersRoutes');
+const ticketTypesRoutes = require('./routes/ticketTypesRoutes');
 
 const app = express();
 
@@ -28,6 +31,9 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/organizer', organizerRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/organizers', organizersRoutes);
+app.use('/api/ticket-types', ticketTypesRoutes);
 
 /**
  * @swagger

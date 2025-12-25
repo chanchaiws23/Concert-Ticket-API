@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticateToken, requireAdmin } = require('../middlewares/authMiddleware');
 const { getUsers, deleteUser, getAllOrders, deleteEvent } = require('../controllers/adminController');
+const { updateEvent } = require('../controllers/eventController');
 
 /**
  * @swagger
@@ -165,6 +166,73 @@ router.delete('/users/:id', authenticateToken, requireAdmin, deleteUser);
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/orders', authenticateToken, requireAdmin, getAllOrders);
+
+/**
+ * @swagger
+ * /api/admin/events/{id}:
+ *   put:
+ *     summary: Update any event (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Event ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateEventRequest'
+ *     responses:
+ *       200:
+ *         description: Event updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessMessage'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Unauthorized
+ *       403:
+ *         description: Admin access required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Admin access required
+ *       404:
+ *         description: Event not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Event not found
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.put('/events/:id', authenticateToken, requireAdmin, updateEvent);
 
 /**
  * @swagger

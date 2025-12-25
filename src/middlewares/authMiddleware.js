@@ -14,7 +14,7 @@ exports.authenticateToken = (req, res, next) => {
 };
 
 exports.requireOrganizer = (req, res, next) => {
-  if (req.user?.role !== 'ORGANIZER') {
+  if (req.user?.role !== 'ORGANIZER' && req.user?.role !== 'ADMIN') {
     return res.status(403).json({ message: 'Organizer access required' });
   }
   next();

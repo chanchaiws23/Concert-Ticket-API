@@ -98,7 +98,7 @@ exports.updateEvent = async (req, res) => {
   const client = await pool.connect();
 
   try {
-    // ตรวจสอบว่า event เป็นของ organizer นี้หรือไม่
+    // ตรวจสอบว่า event เป็นของ organizer นี้หรือไม่ (ยกเว้น admin)
     const eventCheck = await client.query(
       `SELECT organizer_id FROM concert_ticket.events WHERE id = $1`,
       [id]
@@ -108,7 +108,8 @@ exports.updateEvent = async (req, res) => {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    if (eventCheck.rows[0].organizer_id !== req.user.organizerId) {
+    // ถ้าไม่ใช่ admin ต้องตรวจสอบว่าเป็น owner ของ event
+    if (req.user.role !== 'ADMIN' && eventCheck.rows[0].organizer_id !== req.user.organizerId) {
       return res.status(403).json({ message: 'You are not authorized to update this event' });
     }
 
@@ -185,7 +186,7 @@ exports.deleteEvent = async (req, res) => {
   const client = await pool.connect();
 
   try {
-    // ตรวจสอบว่า event เป็นของ organizer นี้หรือไม่
+    // ตรวจสอบว่า event เป็นของ organizer นี้หรือไม่ (ยกเว้น admin)
     const eventCheck = await client.query(
       `SELECT organizer_id FROM concert_ticket.events WHERE id = $1`,
       [id]
@@ -195,7 +196,8 @@ exports.deleteEvent = async (req, res) => {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    if (eventCheck.rows[0].organizer_id !== req.user.organizerId) {
+    // ถ้าไม่ใช่ admin ต้องตรวจสอบว่าเป็น owner ของ event
+    if (req.user.role !== 'ADMIN' && eventCheck.rows[0].organizer_id !== req.user.organizerId) {
       return res.status(403).json({ message: 'You are not authorized to delete this event' });
     }
 

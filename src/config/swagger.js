@@ -40,16 +40,28 @@ const options = {
             },
             role: {
               type: 'string',
-              enum: ['USER', 'ORGANIZER'],
+              enum: ['USER', 'ORGANIZER', 'ADMIN'],
               description: 'User role',
             },
-            firstName: {
+            first_name: {
               type: 'string',
               description: 'User first name',
             },
-            lastName: {
+            last_name: {
               type: 'string',
               description: 'User last name',
+            },
+            created_at: {
+              type: 'string',
+              format: 'date-time',
+            },
+            organizer_id: {
+              type: 'integer',
+              description: 'Organizer ID if user is an organizer',
+            },
+            company_name: {
+              type: 'string',
+              description: 'Company name if user is an organizer',
             },
           },
         },
@@ -443,6 +455,60 @@ const options = {
                   },
                 },
               },
+            },
+          },
+        },
+        Organizer: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'integer',
+            },
+            user_id: {
+              type: 'integer',
+            },
+            company_name: {
+              type: 'string',
+              example: 'Concert Organizers Ltd',
+            },
+            created_at: {
+              type: 'string',
+              format: 'date-time',
+            },
+            email: {
+              type: 'string',
+              format: 'email',
+            },
+            first_name: {
+              type: 'string',
+            },
+            last_name: {
+              type: 'string',
+            },
+            role: {
+              type: 'string',
+              enum: ['USER', 'ORGANIZER', 'ADMIN'],
+            },
+          },
+        },
+        Pagination: {
+          type: 'object',
+          properties: {
+            page: {
+              type: 'integer',
+              example: 1,
+            },
+            limit: {
+              type: 'integer',
+              example: 10,
+            },
+            total: {
+              type: 'integer',
+              example: 100,
+            },
+            totalPages: {
+              type: 'integer',
+              example: 10,
             },
           },
         },
