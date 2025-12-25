@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getMyOrders, purchaseTickets, getOrderById } = require('../controllers/orderController');
+const { getMyOrders, purchaseTickets, getOrderById, checkExpiredOrders } = require('../controllers/orderController');
 const { authenticateToken } = require('../middlewares/authMiddleware');
 
 /**
@@ -31,7 +31,7 @@ const { authenticateToken } = require('../middlewares/authMiddleware');
  *             schema:
  *               $ref: '#/components/schemas/PurchaseTicketsResponse'
  *       400:
- *         description: Bad request (e.g., tickets sold out)
+ *         description: Bad request (e.g., tickets sold out, or has pending order)
  *         content:
  *           application/json:
  *             schema:
@@ -42,7 +42,33 @@ const { authenticateToken } = require('../middlewares/authMiddleware');
  *                   example: false
  *                 error:
  *                   type: string
- *                   example: บัตร ID 1 หมดแล้ว
+ *                   example: "You have a pending order. Please complete payment first."
+ *                 pendingOrderId:
+ *                   type: integer
+ *                   description: ID ของ order ที่ยังไม่ได้ชำระเงิน (ถ้ามี)
+ *                   example: 123
+ *                 timeRemaining:
+ *                   type: number
+ *                   description: เวลาที่เหลือ (นาที) ก่อน order จะถูกยกเลิกอัตโนมัติ (ถ้ามี)
+ *                   example: 5.5
+ *                 orderTotalAmount:
+ *                   type: number
+ *                   description: จำนวนเงินของ order ที่ค้างชำระ (ถ้ามี)
+ *                   example: 1500
+ *             examples:
+ *               pendingOrder:
+ *                 summary: Has pending order
+ *                 value:
+ *                   success: false
+ *                   error: "You have a pending order (Order ID: 123). Please complete payment first or wait for auto cancellation."
+ *                   pendingOrderId: 123
+ *                   timeRemaining: 5.5
+ *                   orderTotalAmount: 1500
+ *               ticketsSoldOut:
+ *                 summary: Tickets sold out
+ *                 value:
+ *                   success: false
+ *                   error: "Ticket ID 1 (VIP) is not available (only 5 tickets left)"
  *       401:
  *         description: Unauthorized
  *         content:
@@ -152,5 +178,38 @@ router.get('/my-orders', authenticateToken, getMyOrders);
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/:id', authenticateToken, getOrderById);
+
+/**
+ * @swagger
+ * /api/orders/check-expired:
+ *   post:
+ *     summary: Check and cancel expired orders (Admin only)
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Expired orders check result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 cancelled:
+ *                   type: integer
+ *                   description: Number of cancelled orders
+ *                 errors:
+ *                   type: integer
+ *                   description: Number of errors
+ *                 message:
+ *                   type: string
+ *       403:
+ *         description: Forbidden (not admin)
+ *       500:
+ *         description: Server error
+ */
+router.post('/check-expired', authenticateToken, checkExpiredOrders);
 
 module.exports = router;
