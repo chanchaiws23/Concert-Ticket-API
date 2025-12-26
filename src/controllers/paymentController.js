@@ -456,18 +456,37 @@ exports.verifySlipImage = async (req, res) => {
     formData.append('log', 'true');
     formData.append('amount', amount);
 
-    const response = await axios.post(
-      urlSlipOK,
-      formData,
-      {
-        headers: {
-          ...formData.getHeaders(),
-          'x-authorization': secretKey,
-        },
-        maxBodyLength: Infinity,
-        maxContentLength: Infinity,
+    let response;
+    try {
+      response = await axios.post(
+        urlSlipOK,
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+            'x-authorization': secretKey,
+          },
+          maxBodyLength: Infinity,
+          maxContentLength: Infinity,
+          validateStatus: function (status) {
+            // รับ status code ทั้งหมด (ไม่ throw error สำหรับ 4xx, 5xx)
+            return status >= 200 && status < 600;
+          },
+        }
+      );
+    } catch (networkError) {
+      // Network error (ไม่มี response จาก server)
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
       }
-    );
+      await client.release();
+      console.error('Network error calling SlipOK API:', networkError.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Slip verification service unavailable',
+        error: networkError.message
+      });
+    }
 
     await client.query('BEGIN');
 
@@ -524,10 +543,16 @@ exports.verifySlipImage = async (req, res) => {
         fs.unlinkSync(req.file.path);
       }
       await client.query('ROLLBACK');
-      res.json({ 
+      
+      // ตรวจสอบ status code จาก SlipOK API
+      const statusCode = response.status || 400;
+      const errorMessage = response.data?.message || response.data?.details?.message || 'Slip verification failed';
+      
+      return res.status(statusCode).json({ 
         success: false, 
-        message: 'Slip verification failed', 
-        data: response.data 
+        message: 'slip verification failed',
+        error: `Request failed with status code ${statusCode}`,
+        details: response.data || {}
       });
     }
   } catch (err) {
@@ -538,6 +563,19 @@ exports.verifySlipImage = async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
     
+    // ตรวจสอบว่าเป็น error จาก API หรือ database error
+    if (err?.response?.data) {
+      // Error จาก SlipOK API (ควรไม่เกิดขึ้นเพราะใช้ validateStatus แล้ว)
+      const statusCode = err.response.status || 400;
+      return res.status(statusCode).json({
+        success: false,
+        message: 'slip verification failed',
+        error: `Request failed with status code ${statusCode}`,
+        details: err.response.data
+      });
+    }
+    
+    // Database error หรือ error อื่นๆ
     res.status(500).json({
       success: false,
       message: 'Slip verification failed',
